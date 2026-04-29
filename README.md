@@ -342,6 +342,8 @@ git rm --cached omdb_keys.txt client_keys.txt
 
 ## Cloudflare KV 持久化统计
 
+> 注意：Cloudflare 一键部署按钮不会替你的账号自动创建 KV namespace。你需要在部署后通过控制台绑定，或在本地登录 Wrangler 后运行下面的脚本创建并绑定。
+
 Cloudflare Worker 版默认使用内存统计，请求数在重新部署、冷启动或切换边缘节点后可能清零。若要让 `/metrics` 的今日请求数和总请求数持久化，可以绑定 Cloudflare KV。
 
 ### 控制台配置步骤
@@ -375,14 +377,32 @@ requests:lastRequest
 
 ### Wrangler 配置方式
 
-也可以用命令创建 KV：
+推荐用项目内置脚本创建并自动写入 `wrangler.toml`：
 
 ```bash
-npx wrangler@latest kv namespace create omdbapi_proxy_stats
-npx wrangler@latest kv namespace create omdbapi_proxy_stats --preview
+# 在仓库根目录执行
+npm run cf:kv:create
+npm run cf:kv:create-preview
 ```
 
-然后把返回的 `id` 和 `preview_id` 填到根目录 `wrangler.toml`：
+如果你在 `cf/` 目录里执行，也可以用：
+
+```bash
+cd cf
+npm run kv:create
+npm run kv:create-preview
+```
+
+这些命令会调用 Wrangler 的 `--binding STATS_KV --update-config`，自动创建 KV namespace 并把绑定写入对应的 `wrangler.toml`。
+
+也可以手动创建 KV：
+
+```bash
+npx wrangler@latest kv namespace create omdbapi_proxy_stats --binding STATS_KV --update-config
+npx wrangler@latest kv namespace create omdbapi_proxy_stats --preview --binding STATS_KV --update-config
+```
+
+命令执行后，`wrangler.toml` 会出现类似配置：
 
 ```toml
 [[kv_namespaces]]
