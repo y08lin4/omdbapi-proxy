@@ -31,3 +31,4 @@ wrangler.toml.*
 .DS_Store
 Thumbs.db
 omdb_keys_comma.txt
+omdbapi_ailinyu_de_examples.md
