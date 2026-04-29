@@ -1,5 +1,7 @@
 ﻿# OMDb API 管理器 - Cloudflare Worker 版
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/y08lin4/omdbapi-proxy)
+
 这个目录是 Cloudflare Worker 版本。它和 Go 版保持同样的外部请求格式：客户端使用你发放的 `apikey` 请求，Worker 内部从 OMDb 官方 key 池中选择 key 并替换转发。
 
 参考 Cloudflare Worker 官方文档：
@@ -76,13 +78,11 @@ npx wrangler@latest deploy
 仓库发布到 GitHub 后，可以在根目录 README 或本文件中加入：
 
 ```md
-[![部署到 Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/你的仓库/tree/main/cf)
 ```
 
 如果你把 `cf/` 单独作为一个仓库，链接可以改成：
 
 ```md
-[![部署到 Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/你的仓库)
 ```
 
 部署完成后，在 Cloudflare 控制台或 Wrangler 中设置：
@@ -94,3 +94,4 @@ npx wrangler@latest deploy
 ## 注意
 
 Cloudflare Worker 的内存状态是每个 isolate / 边缘节点本地的，不保证全局一致。因此当前版本的轮询、冷却和统计是“边缘本地状态”。如果你需要跨全球节点统一冷却或统计，需要再加 Durable Objects 或 KV。
+
