@@ -1,0 +1,15 @@
+﻿name = "omdbapi-proxy"
+main = "cf/src/index.js"
+compatibility_date = "2025-01-01"
+
+# 根目录配置用于 Cloudflare 一键部署。
+# 不要把真实 key 写进 wrangler.toml。
+# 本地开发可使用 cf/.dev.vars；线上用 Cloudflare Secrets：
+# CLIENT_KEYS / OMDB_KEYS / ADMIN_KEY。
+[vars]
+OMDB_API_URL = "https://www.omdbapi.com/"
+OMDB_POSTER_URL = "https://img.omdbapi.com/"
+HTTP_TIMEOUT = "10s"
+KEY_COOLDOWN = "5m"
+MAX_ATTEMPTS_PER_REQUEST = "0"
+CORS_ORIGIN = "*"

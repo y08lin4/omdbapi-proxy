@@ -95,7 +95,7 @@ npx wrangler@latest deploy
 仓库发布到 GitHub 后，可以在 README 中放置下面的按钮。把链接里的仓库地址替换成你的真实仓库地址：
 
 ```md
-[![部署到 Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/你的仓库/tree/main/cf)
+[![部署到 Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/你的用户名/你的仓库)
 ```
 
 > 注意：一键部署不会把真实 key 写进仓库。部署过程中或部署后，需要在 Cloudflare 控制台 / Wrangler 中配置 `CLIENT_KEYS`、`OMDB_KEYS`、`ADMIN_KEY`。
@@ -112,3 +112,4 @@ npx wrangler@latest deploy
 ## 许可证
 
 本项目使用 MIT License，见 [LICENSE](LICENSE)。
+
