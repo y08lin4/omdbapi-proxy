@@ -154,5 +154,21 @@ GET /?apikey=YOUR_CLIENT_KEY&amp;i=tt0944947&amp;Season=1</code></pre>
     const first = document.getElementById('base-example');
     if (first) first.textContent = `GET ${origin}/?apikey=YOUR_CLIENT_KEY&t=Inception`;
   </script>
+
+  <script>
+    async function loadRequestStats() {
+      try {
+        const res = await fetch('/metrics', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const stats = data.requests || data;
+        document.getElementById('stats-today').textContent = String(stats.today ?? 0);
+        document.getElementById('stats-total').textContent = String(stats.total ?? 0);
+      } catch (error) {
+        document.getElementById('stats-note').textContent = '???????????????';
+      }
+    }
+    loadRequestStats();
+  </script>
 </body>
 </html>

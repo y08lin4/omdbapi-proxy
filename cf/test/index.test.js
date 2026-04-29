@@ -104,3 +104,22 @@ test("普通业务错误不切换 key", async () => {
     await close(upstream);
   }
 });
+
+test("metrics 统计今日和总请求", async () => {
+  const upstream = http.createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ Response: "True", Title: "Inception" }));
+  });
+  const base = await listen(upstream);
+  const env = testEnv(base, { OMDB_KEYS: "only-good" });
+  try {
+    await worker.fetch(new Request("https://proxy.test/?apikey=client-good&t=Inception"), env);
+    const response = await worker.fetch(new Request("https://proxy.test/metrics"), env);
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(json.requests.today, 1);
+    assert.equal(json.requests.total, 1);
+  } finally {
+    await close(upstream);
+  }
+});

@@ -16,7 +16,7 @@
 - `GET /` 或 `GET /api`：OMDb 数据 API 代理。
 - `GET /poster`：OMDb poster API 代理。
 - `GET /docs`：静态文档页。
-- `GET /health`：健康检查。
+- `GET /health`：健康检查。`n- `GET /metrics`：公开请求统计，返回今日请求数和总请求数。
 - `GET /admin/stats?admin_key=ADMIN_KEY`：查看 key 池状态。
 - `POST /admin/reload?admin_key=ADMIN_KEY`：重新解析环境变量中的 key，并重置内存状态。
 
@@ -94,4 +94,5 @@ npx wrangler@latest deploy
 ## 注意
 
 Cloudflare Worker 的内存状态是每个 isolate / 边缘节点本地的，不保证全局一致。因此当前版本的轮询、冷却和统计是“边缘本地状态”。如果你需要跨全球节点统一冷却或统计，需要再加 Durable Objects 或 KV。
+
 

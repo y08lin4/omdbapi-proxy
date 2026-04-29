@@ -38,6 +38,7 @@ type App struct {
 	posterURL *url.URL
 	omdbKeys  *KeyPool
 	clients   *AuthStore
+	stats     *RequestStats
 }
 
 func NewApp(cfg Config) (*App, error) {
@@ -54,6 +55,7 @@ func NewApp(cfg Config) (*App, error) {
 		cfg:       cfg,
 		dataURL:   dataURL,
 		posterURL: posterURL,
+		stats:     NewRequestStats(),
 		client: &http.Client{
 			Timeout: cfg.HTTPTimeout,
 			Transport: &http.Transport{
@@ -142,12 +144,14 @@ func (a *App) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		a.handleDocs(w, r)
 	case "/health":
 		a.handleHealth(w, r)
+	case "/metrics":
+		a.handleMetrics(w, r)
 	case "/admin/stats":
 		a.handleAdminStats(w, r)
 	case "/admin/reload":
 		a.handleAdminReload(w, r)
 	default:
-		writeOMDBError(w, r, http.StatusNotFound, "Not found. Use /, /api, /poster, /docs, /health, /admin/stats or /admin/reload.")
+		writeOMDBError(w, r, http.StatusNotFound, "Not found. Use /, /api, /poster, /docs, /health, /metrics, /admin/stats or /admin/reload.")
 	}
 }
 
@@ -182,9 +186,20 @@ func (a *App) handleHealth(w http.ResponseWriter, r *http.Request) {
 		"ok":             omdbStats.TotalKeys > 0 && a.clients.Count() > 0,
 		"service":        "omdb-api-manager",
 		"clientKeyCount": a.clients.Count(),
+		"requests":       a.stats.Snapshot(),
 		"omdb":           omdbStats,
 	}
 	writeJSON(w, r, http.StatusOK, payload)
+}
+
+func (a *App) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		writeJSON(w, r, http.StatusMethodNotAllowed, map[string]string{"error": "method not allowed"})
+		return
+	}
+	writeJSON(w, r, http.StatusOK, map[string]any{
+		"requests": a.stats.Snapshot(),
+	})
 }
 
 func (a *App) handleAdminStats(w http.ResponseWriter, r *http.Request) {
@@ -199,6 +214,7 @@ func (a *App) handleAdminStats(w http.ResponseWriter, r *http.Request) {
 
 	payload := map[string]any{
 		"clientKeyCount": a.clients.Count(),
+		"requests":       a.stats.Snapshot(),
 		"omdb":           a.omdbKeys.Stats(true),
 	}
 	writeJSON(w, r, http.StatusOK, payload)
@@ -220,6 +236,7 @@ func (a *App) handleAdminReload(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, r, http.StatusOK, map[string]any{
 		"ok":             true,
 		"clientKeyCount": a.clients.Count(),
+		"requests":       a.stats.Snapshot(),
 		"omdb":           a.omdbKeys.Stats(false),
 	})
 }
@@ -234,6 +251,8 @@ func (a *App) handleProxy(w http.ResponseWriter, r *http.Request, upstreamBase *
 		writeOMDBError(w, r, http.StatusUnauthorized, "Invalid API key.")
 		return
 	}
+
+	a.stats.Inc()
 
 	if a.omdbKeys.Size() == 0 {
 		writeOMDBError(w, r, http.StatusServiceUnavailable, "No upstream OMDb API keys configured.")

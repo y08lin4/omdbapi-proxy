@@ -101,5 +101,21 @@ GET /?apikey=YOUR_CLIENT_KEY&amp;t=Game%20of%20Thrones&amp;Season=1&amp;Episode=
 GET /poster?apikey=YOUR_CLIENT_KEY&amp;i=tt1375666&amp;h=600</code></pre>
     </section>
   </main>
+
+  <script>
+    async function loadRequestStats() {
+      try {
+        const res = await fetch('/metrics', { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        const stats = data.requests || data;
+        document.getElementById('stats-today').textContent = String(stats.today ?? 0);
+        document.getElementById('stats-total').textContent = String(stats.total ?? 0);
+      } catch (error) {
+        document.getElementById('stats-note').textContent = '???????????????';
+      }
+    }
+    loadRequestStats();
+  </script>
 </body>
 </html>`;

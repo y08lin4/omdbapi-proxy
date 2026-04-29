@@ -53,14 +53,17 @@ export async function handleRequest(request, env = {}, ctx = {}) {
           service: "omdb-api-manager-worker",
           runtime: "cloudflare-workers",
           clientKeyCount: state.clients.size,
+          requests: state.stats.snapshot(),
           omdb: state.omdbKeys.stats(false)
         });
+      case "/metrics":
+        return metricsResponse(request, env, state);
       case "/admin/stats":
         return adminStats(request, env, state);
       case "/admin/reload":
         return adminReload(request, env);
       default:
-        return omdbErrorResponse(env, request, 404, "Not found. Use /, /api, /poster, /docs, /health, /admin/stats or /admin/reload.");
+        return omdbErrorResponse(env, request, 404, "Not found. Use /, /api, /poster, /docs, /health, /metrics, /admin/stats or /admin/reload.");
     }
   } catch (error) {
     console.error("worker error", error && (error.stack || error.message || error));
@@ -77,6 +80,8 @@ async function proxyRequest(request, env, state, upstreamBaseURL) {
   if (!state.clients.has(clientKey)) {
     return omdbErrorResponse(env, request, 401, "Invalid API key.");
   }
+
+  state.stats.inc();
 
   if (state.omdbKeys.size() === 0) {
     return omdbErrorResponse(env, request, 503, "No upstream OMDb API keys configured.");
@@ -141,7 +146,51 @@ export class RuntimeState {
     this.signature = signature;
     this.omdbKeys = new KeyPool(omdbKeys, cooldownMs);
     this.clients = new Set(clientKeys);
+    this.stats = new RequestStats();
   }
+}
+
+
+export class RequestStats {
+  constructor() {
+    const now = new Date();
+    this.total = 0;
+    this.today = 0;
+    this.day = dayString(now);
+    this.startedAt = now.toISOString();
+    this.lastRequest = "";
+  }
+
+  inc() {
+    const now = new Date();
+    const day = dayString(now);
+    if (this.day !== day) {
+      this.day = day;
+      this.today = 0;
+    }
+    this.total += 1;
+    this.today += 1;
+    this.lastRequest = now.toISOString();
+  }
+
+  snapshot() {
+    const day = dayString(new Date());
+    if (this.day !== day) {
+      this.day = day;
+      this.today = 0;
+    }
+    return {
+      total: this.total,
+      today: this.today,
+      day: this.day,
+      startedAt: this.startedAt,
+      lastRequest: this.lastRequest || undefined
+    };
+  }
+}
+
+function dayString(date) {
+  return date.toISOString().slice(0, 10);
 }
 
 export class KeyPool {
@@ -395,6 +444,13 @@ function optionsResponse(env, request) {
   return new Response(null, { status: 204, headers });
 }
 
+function metricsResponse(request, env, state) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return jsonResponse(env, request, 405, { error: "method not allowed" });
+  }
+  return jsonResponse(env, request, 200, { requests: state.stats.snapshot() });
+}
+
 function adminStats(request, env, state) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return jsonResponse(env, request, 405, { error: "method not allowed" });
@@ -404,6 +460,7 @@ function adminStats(request, env, state) {
   }
   return jsonResponse(env, request, 200, {
     clientKeyCount: state.clients.size,
+    requests: state.stats.snapshot(),
     omdb: state.omdbKeys.stats(true)
   });
 }
@@ -416,10 +473,13 @@ function adminReload(request, env) {
     return jsonResponse(env, request, 401, { error: "invalid admin key" });
   }
   const cooldownMs = durationToMs(env.KEY_COOLDOWN || env.KEY_COOLDOWN_MS, DEFAULT_KEY_COOLDOWN_MS);
+  const oldStats = runtimeState && runtimeState.stats;
   runtimeState = new RuntimeState(parseKeys(env.OMDB_KEYS || ""), parseKeys(env.CLIENT_KEYS || ""), cooldownMs, stateSignature(env, cooldownMs));
+  if (oldStats) runtimeState.stats = oldStats;
   return jsonResponse(env, request, 200, {
     ok: true,
     clientKeyCount: runtimeState.clients.size,
+    requests: runtimeState.stats.snapshot(),
     omdb: runtimeState.omdbKeys.stats(false)
   });
 }

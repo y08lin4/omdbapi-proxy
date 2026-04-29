@@ -107,10 +107,11 @@ npx wrangler@latest deploy
 - 客户端 key 不限流。
 - OMDb 官方 key 自动轮询。
 - 某个 OMDb key 超额、无效、429、5xx 或超时后自动冷却，并尝试下一个 key。
-- 普通业务错误，例如 `Movie not found!`，原样返回，不切换 key。
+- 普通业务错误，例如 `Movie not found!`，原样返回，不切换 key。`n- 静态页面提供数据看板，通过 `/metrics` 显示今日请求数和总请求数。
 
 
 ## 许可证
 
 本项目使用 MIT License，见 [LICENSE](LICENSE)。
+
 
