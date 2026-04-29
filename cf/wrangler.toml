@@ -1,0 +1,13 @@
+name = "omdb-api-manager"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# ????? key ?? wrangler.toml?
+# ????? .dev.vars???? wrangler secret put OMDB_KEYS / CLIENT_KEYS / ADMIN_KEY?
+[vars]
+OMDB_API_URL = "https://www.omdbapi.com/"
+OMDB_POSTER_URL = "https://img.omdbapi.com/"
+HTTP_TIMEOUT = "10s"
+KEY_COOLDOWN = "5m"
+MAX_ATTEMPTS_PER_REQUEST = "0"
+CORS_ORIGIN = "*"

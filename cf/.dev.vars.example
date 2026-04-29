@@ -1,0 +1,18 @@
+﻿# Cloudflare Worker 本地调试变量。
+# 复制为 .dev.vars 后再填真实值；.dev.vars 已被根目录 .gitignore 忽略。
+
+# 你给调用方的访问 key，一行 / 逗号 / 空格分隔都可以。
+CLIENT_KEYS=local_client_key
+
+# OMDb 官方 key 池；不要把真实 key 提交到 GitHub。
+OMDB_KEYS=your_omdb_key_1,your_omdb_key_2
+
+# 管理接口 key。
+ADMIN_KEY=local_admin_key
+
+OMDB_API_URL=https://www.omdbapi.com/
+OMDB_POSTER_URL=https://img.omdbapi.com/
+HTTP_TIMEOUT=10s
+KEY_COOLDOWN=5m
+MAX_ATTEMPTS_PER_REQUEST=0
+CORS_ORIGIN=*

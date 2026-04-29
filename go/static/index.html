@@ -1,0 +1,158 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>OMDb API 浠ｇ悊璇锋眰鏂囨。</title>
+  <style>
+    :root { color-scheme: light dark; --bg:#0f172a; --card:#111827; --text:#e5e7eb; --muted:#94a3b8; --line:#334155; --accent:#38bdf8; --code:#020617; }
+    @media (prefers-color-scheme: light) { :root { --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#475569; --line:#e2e8f0; --accent:#0284c7; --code:#f1f5f9; } }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: "Noto Sans SC", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Source Han Sans SC", Arial, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+    header { padding:42px 22px 24px; border-bottom:1px solid var(--line); background:linear-gradient(135deg, rgba(56,189,248,.18), transparent 55%); }
+    main { width:min(1100px, 100%); margin:0 auto; padding:24px 18px 60px; }
+    h1 { margin:0 0 8px; font-size:clamp(28px, 4vw, 44px); }
+    h2 { margin-top:32px; padding-top:12px; border-top:1px solid var(--line); }
+    h3 { margin-top:22px; }
+    p, li { color:var(--muted); }
+    a { color:var(--accent); }
+    .wrap { width:min(1100px, 100%); margin:0 auto; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:18px; margin:16px 0; box-shadow:0 10px 30px rgba(0,0,0,.12); }
+    code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    code { background:var(--code); padding:.15rem .35rem; border-radius:6px; }
+    pre { background:var(--code); padding:14px; border-radius:12px; overflow:auto; border:1px solid var(--line); }
+    table { width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px; border:1px solid var(--line); }
+    th, td { padding:10px 12px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }
+    th { color:var(--text); background:rgba(148,163,184,.12); }
+    tr:last-child td { border-bottom:none; }
+    .pill { display:inline-block; border:1px solid var(--line); border-radius:999px; padding:2px 9px; color:var(--muted); font-size:12px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:14px; }
+    .ok { color:#22c55e; }
+    .warn { color:#f59e0b; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <span class="pill">OMDb API Manager</span>
+      <h1>OMDb API 浠ｇ悊璇锋眰鏂囨。</h1>
+      <p>鏈湇鍔″吋瀹?OMDb 瀹樻柟鏌ヨ鏍煎紡锛屼絾 <code>apikey</code> 浣跨敤鐨勬槸鏈珯鍙戞斁鐨勮闂?key銆傛湇鍔＄浼氳嚜鍔ㄦ浛鎹负鍐呴儴 OMDb 瀹樻柟 key 姹犱腑鐨?key銆?/p>
+    </div>
+  </header>
+  <main>
+    <section class="card">
+      <h2>鍩虹瑙勫垯</h2>
+      <ul>
+        <li><strong>鎵€鏈変唬鐞?API 蹇呴』甯?<code>apikey</code></strong>锛屾病鏈?key 鎴?key 閿欒浼氳繑鍥?<code>401</code>銆?/li>
+        <li><code>apikey</code> 鏄湰绔欐湇鍔?key锛屼笉鏄?OMDb 瀹樻柟 key銆?/li>
+        <li>闄?<code>apikey</code> 澶栵紝鍏朵綑 query 鍙傛暟浼氬師鏍疯浆鍙戠粰 OMDb銆?/li>
+        <li>涔熸敮鎸佽姹傚ご锛?code>X-API-Key: your_client_key</code> 鎴?<code>Authorization: Bearer your_client_key</code>銆?/li>
+      </ul>
+      <pre><code id="base-example">GET https://your-domain.com/?apikey=YOUR_CLIENT_KEY&amp;t=Inception</code></pre>
+    </section>
+
+    <section>
+      <h2>鎺ュ彛鎬昏</h2>
+      <div class="grid">
+        <div class="card"><h3>鏁版嵁 API</h3><p><code>GET /</code> 鎴?<code>GET /api</code></p><p>鏌ヨ鏍囬銆両MDb ID銆佹悳绱€佸墽闆嗗/闆嗙瓑銆?/p></div>
+        <div class="card"><h3>娴锋姤 API</h3><p><code>GET /poster</code></p><p>杞彂鍒?OMDb poster API銆傛捣鎶?API 鏄惁鍙敤鍙栧喅浜庝綘鐨?OMDb 瀹樻柟 key 鏉冮檺銆?/p></div>
+        <div class="card"><h3>鍋ュ悍妫€鏌?/h3><p><code>GET /health</code></p><p>杩斿洖鏈嶅姟鐘舵€併€佸鎴风 key 鏁伴噺銆丱MDb key 姹犳暟閲忋€?/p></div>
+        <div class="card"><h3>绠＄悊鎺ュ彛</h3><p><code>GET /admin/stats</code><br><code>POST /admin/reload</code></p><p>闇€瑕?<code>admin_key</code> 鎴?<code>X-Admin-Key</code>銆?/p></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1. 鎸夋爣棰樻垨 IMDb ID 鏌ヨ</h2>
+      <table>
+        <thead><tr><th>鍙傛暟</th><th>璇存槑</th><th>绀轰緥</th></tr></thead>
+        <tbody>
+          <tr><td><code>i</code></td><td>IMDb ID锛屼緥濡?<code>tt1375666</code>銆?/td><td><code>?apikey=KEY&amp;i=tt1375666</code></td></tr>
+          <tr><td><code>t</code></td><td>鐢靛奖/鍓ч泦鏍囬銆?/td><td><code>?apikey=KEY&amp;t=Inception</code></td></tr>
+          <tr><td><code>type</code></td><td>缁撴灉绫诲瀷锛?code>movie</code>銆?code>series</code>銆?code>episode</code>銆?/td><td><code>&amp;type=movie</code></td></tr>
+          <tr><td><code>y</code></td><td>骞翠唤銆?/td><td><code>&amp;y=2010</code></td></tr>
+          <tr><td><code>plot</code></td><td>鍓ф儏闀垮害锛?code>short</code> 鎴?<code>full</code>銆?/td><td><code>&amp;plot=full</code></td></tr>
+          <tr><td><code>r</code></td><td>鍝嶅簲鏍煎紡锛?code>json</code> 鎴?<code>xml</code>銆?/td><td><code>&amp;r=xml</code></td></tr>
+          <tr><td><code>callback</code></td><td>JSONP 鍥炶皟鍑芥暟鍚嶃€?/td><td><code>&amp;callback=myCallback</code></td></tr>
+          <tr><td><code>v</code></td><td>API 鐗堟湰锛岄粯璁?<code>1</code>銆?/td><td><code>&amp;v=1</code></td></tr>
+        </tbody>
+      </table>
+      <h3>绀轰緥</h3>
+      <pre><code>GET /?apikey=YOUR_CLIENT_KEY&amp;t=Inception&amp;plot=full
+GET /?apikey=YOUR_CLIENT_KEY&amp;i=tt1375666
+GET /?apikey=YOUR_CLIENT_KEY&amp;t=Inception&amp;r=xml
+GET /?apikey=YOUR_CLIENT_KEY&amp;t=Inception&amp;callback=myCallback</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>2. 鎼滅储</h2>
+      <table>
+        <thead><tr><th>鍙傛暟</th><th>璇存槑</th><th>绀轰緥</th></tr></thead>
+        <tbody>
+          <tr><td><code>s</code></td><td>鎼滅储鍏抽敭璇嶃€?/td><td><code>?apikey=KEY&amp;s=Batman</code></td></tr>
+          <tr><td><code>type</code></td><td>缁撴灉绫诲瀷锛?code>movie</code>銆?code>series</code>銆?code>episode</code>銆?/td><td><code>&amp;type=movie</code></td></tr>
+          <tr><td><code>y</code></td><td>骞翠唤銆?/td><td><code>&amp;y=2008</code></td></tr>
+          <tr><td><code>page</code></td><td>鍒嗛〉锛屽畼鏂硅寖鍥撮€氬父涓?<code>1-100</code>銆?/td><td><code>&amp;page=2</code></td></tr>
+          <tr><td><code>r</code></td><td>鍝嶅簲鏍煎紡锛?code>json</code> 鎴?<code>xml</code>銆?/td><td><code>&amp;r=json</code></td></tr>
+          <tr><td><code>callback</code></td><td>JSONP 鍥炶皟鍑芥暟鍚嶃€?/td><td><code>&amp;callback=myCallback</code></td></tr>
+          <tr><td><code>v</code></td><td>API 鐗堟湰銆?/td><td><code>&amp;v=1</code></td></tr>
+        </tbody>
+      </table>
+      <h3>绀轰緥</h3>
+      <pre><code>GET /?apikey=YOUR_CLIENT_KEY&amp;s=Batman
+GET /?apikey=YOUR_CLIENT_KEY&amp;s=Batman&amp;type=movie&amp;page=2
+GET /?apikey=YOUR_CLIENT_KEY&amp;s=Game%20of%20Thrones&amp;type=series</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>3. 鍓ч泦 Season / Episode</h2>
+      <p>OMDb 鏀寔閫氳繃 <code>Season</code> 鍜?<code>Episode</code> 鏌ヨ鍓ч泦瀛?闆嗕俊鎭€傛湰浠ｇ悊涓嶉檺鍒跺弬鏁板悕锛屽洜姝ゅぇ灏忓啓浼氬師鏍疯浆鍙戙€?/p>
+      <table>
+        <thead><tr><th>鍙傛暟</th><th>璇存槑</th><th>绀轰緥</th></tr></thead>
+        <tbody>
+          <tr><td><code>Season</code></td><td>瀛ｆ暟銆?/td><td><code>&amp;Season=1</code></td></tr>
+          <tr><td><code>Episode</code></td><td>闆嗘暟锛屽彲涓?<code>Season</code> 涓€璧蜂娇鐢ㄣ€?/td><td><code>&amp;Season=1&amp;Episode=1</code></td></tr>
+        </tbody>
+      </table>
+      <h3>绀轰緥</h3>
+      <pre><code>GET /?apikey=YOUR_CLIENT_KEY&amp;t=Game%20of%20Thrones&amp;Season=1
+GET /?apikey=YOUR_CLIENT_KEY&amp;t=Game%20of%20Thrones&amp;Season=1&amp;Episode=1
+GET /?apikey=YOUR_CLIENT_KEY&amp;i=tt0944947&amp;Season=1</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>4. Poster API</h2>
+      <p>閫氳繃 <code>/poster</code> 杞彂鍒?OMDb 瀹樻柟 poster API銆傛敞鎰忥細瀹樻柟璇存槑 poster API 鍙 Patreon 鏀寔鑰呭紑鏀撅紝瀹為檯鍙敤鎬у彇鍐充簬浣犵殑 OMDb key銆?/p>
+      <pre><code>GET /poster?apikey=YOUR_CLIENT_KEY&amp;i=tt1375666</code></pre>
+      <p>闄?<code>apikey</code> 澶栫殑鍙傛暟浼氱户缁師鏍疯浆鍙戯紝渚嬪锛?/p>
+      <pre><code>GET /poster?apikey=YOUR_CLIENT_KEY&amp;i=tt1375666&amp;h=600</code></pre>
+    </section>
+
+    <section class="card">
+      <h2>5. 绠＄悊鍜岄儴缃茬浉鍏虫帴鍙?/h2>
+      <table>
+        <thead><tr><th>鎺ュ彛</th><th>鏂规硶</th><th>璇存槑</th></tr></thead>
+        <tbody>
+          <tr><td><code>/health</code></td><td><code>GET</code></td><td>鍏紑鍋ュ悍妫€鏌ワ紝涓嶈繑鍥炵湡瀹?key銆?/td></tr>
+          <tr><td><code>/admin/stats?admin_key=ADMIN_KEY</code></td><td><code>GET</code></td><td>鏌ョ湅 OMDb key 姹犵姸鎬侊紝key 浼氳劚鏁忋€?/td></tr>
+          <tr><td><code>/admin/reload?admin_key=ADMIN_KEY</code></td><td><code>POST</code></td><td>閲嶆柊鍔犺浇 <code>omdb_keys.txt</code> 鍜?<code>client_keys.txt</code>銆?/td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="card">
+      <h2>閿欒鏍煎紡</h2>
+      <p>娌℃湁 key 鎴?key 閿欒锛?/p>
+      <pre><code>HTTP/1.1 401 Unauthorized
+{"Response":"False","Error":"Invalid API key."}</code></pre>
+      <p>OMDb 瀹樻柟 key 閮藉け璐ユ垨鍐峰嵈涓細</p>
+      <pre><code>HTTP/1.1 503 Service Unavailable
+{"Response":"False","Error":"All configured OMDb API keys failed or are cooling down."}</code></pre>
+    </section>
+  </main>
+  <script>
+    const origin = location.origin || 'https://your-domain.com';
+    const first = document.getElementById('base-example');
+    if (first) first.textContent = `GET ${origin}/?apikey=YOUR_CLIENT_KEY&t=Inception`;
+  </script>
+</body>
+</html>

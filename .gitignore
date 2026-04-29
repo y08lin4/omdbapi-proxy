@@ -1,0 +1,32 @@
+﻿# 本地密钥 / 运行时配置（不要提交）
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+!**/.dev.vars.example
+*.local
+
+# 真实 key 文件（不要提交）
+omdb_keys.txt
+client_keys.txt
+**/omdb_keys.txt
+**/client_keys.txt
+
+# 构建产物
+bin/
+dist/
+coverage/
+*.exe
+*.out
+
+# 依赖与工具缓存
+node_modules/
+.wrangler/
+wrangler.toml.*
+
+# 日志 / 系统文件
+*.log
+.DS_Store
+Thumbs.db

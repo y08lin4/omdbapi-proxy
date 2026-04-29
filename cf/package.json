@@ -1,0 +1,35 @@
+﻿{
+  "name": "omdb-api-manager-worker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Cloudflare Worker 版 OMDb 多 key API 管理器。",
+  "scripts": {
+    "test": "node --test",
+    "dev": "npx wrangler@latest dev",
+    "deploy": "npx wrangler@latest deploy",
+    "tail": "npx wrangler@latest tail"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "cloudflare-worker",
+    "omdb",
+    "api-proxy"
+  ],
+  "cloudflare": {
+    "bindings": {
+      "CLIENT_KEYS": {
+        "description": "你发给调用方的服务访问 key；支持一行一个、逗号或空格分隔。"
+      },
+      "OMDB_KEYS": {
+        "description": "OMDb 官方 key 池；支持一行一个、逗号或空格分隔。不要提交到 GitHub。"
+      },
+      "ADMIN_KEY": {
+        "description": "管理接口 key，用于 /admin/stats 和 /admin/reload。"
+      }
+    }
+  },
+  "license": "MIT"
+}

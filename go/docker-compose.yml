@@ -1,0 +1,12 @@
+services:
+  omdb-api-manager:
+    build: .
+    container_name: omdb-api-manager
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./omdb_keys.txt:/app/omdb_keys.txt:ro
+      - ./client_keys.txt:/app/client_keys.txt:ro

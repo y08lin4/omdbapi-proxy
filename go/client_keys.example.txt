@@ -1,0 +1,4 @@
+# 这里放你发给调用方的服务访问 key，一行一个。
+# 客户端必须带 ?apikey=这里的key 才能请求代理 API。
+your_client_key_1
+your_client_key_2
