@@ -25,7 +25,7 @@ export default {
 };
 
 export async function handleRequest(request, env = {}, ctx = {}) {
-  const state = getRuntimeState(env);
+  const state = await getRuntimeState(env);
   const url = new URL(request.url);
   const pathname = normalizePath(url.pathname);
 
@@ -53,6 +53,7 @@ export async function handleRequest(request, env = {}, ctx = {}) {
           service: "omdb-api-manager-worker",
           runtime: "cloudflare-workers",
           clientKeyCount: state.clients.size,
+          omdbKeySource: state.keySource,
           requests: await getRequestStats(env, state),
           omdb: state.omdbKeys.stats(false)
         });
@@ -127,23 +128,34 @@ async function proxyRequest(request, env, state, upstreamBaseURL) {
   return omdbErrorResponse(env, request, 503, "All configured OMDb API keys failed or are cooling down.");
 }
 
-function getRuntimeState(env) {
+async function getRuntimeState(env, forceReload = false) {
   const cooldownMs = durationToMs(env.KEY_COOLDOWN || env.KEY_COOLDOWN_MS, DEFAULT_KEY_COOLDOWN_MS);
-  const signature = stateSignature(env, cooldownMs);
+  const loaded = await loadOMDBKeysRaw(env);
+  const omdbKeysRaw = loaded.value;
+  const signature = stateSignature(env, cooldownMs, omdbKeysRaw);
 
-  if (!runtimeState || runtimeState.signature !== signature) {
-    runtimeState = new RuntimeState(parseKeys(env.OMDB_KEYS || ""), parseKeys(env.CLIENT_KEYS || ""), cooldownMs, signature);
+  if (forceReload || !runtimeState || runtimeState.signature !== signature) {
+    runtimeState = new RuntimeState(parseKeys(omdbKeysRaw), parseKeys(env.CLIENT_KEYS || ""), cooldownMs, signature, loaded.source);
   }
   return runtimeState;
 }
 
-function stateSignature(env, cooldownMs) {
-  return JSON.stringify([env.OMDB_KEYS || "", env.CLIENT_KEYS || "", cooldownMs]);
+async function loadOMDBKeysRaw(env) {
+  if (env.STATS_KV) {
+    const fromKV = await env.STATS_KV.get("omdb:keys");
+    if (fromKV && fromKV.trim()) return { value: fromKV, source: "kv" };
+  }
+  return { value: env.OMDB_KEYS || "", source: env.OMDB_KEYS ? "env" : "empty" };
+}
+
+function stateSignature(env, cooldownMs, omdbKeysRaw) {
+  return JSON.stringify([omdbKeysRaw || "", env.CLIENT_KEYS || "", cooldownMs]);
 }
 
 export class RuntimeState {
-  constructor(omdbKeys, clientKeys, cooldownMs, signature = "") {
+  constructor(omdbKeys, clientKeys, cooldownMs, signature = "", keySource = "env") {
     this.signature = signature;
+    this.keySource = keySource;
     this.omdbKeys = new KeyPool(omdbKeys, cooldownMs);
     this.clients = new Set(clientKeys);
     this.stats = new RequestStats();
@@ -514,6 +526,7 @@ async function adminStats(request, env, state) {
   }
   return jsonResponse(env, request, 200, {
     clientKeyCount: state.clients.size,
+    omdbKeySource: state.keySource,
     requests: await getRequestStats(env, state),
     omdb: state.omdbKeys.stats(true)
   });
@@ -526,15 +539,13 @@ async function adminReload(request, env) {
   if (!adminAuthorized(request, env)) {
     return jsonResponse(env, request, 401, { error: "invalid admin key" });
   }
-  const cooldownMs = durationToMs(env.KEY_COOLDOWN || env.KEY_COOLDOWN_MS, DEFAULT_KEY_COOLDOWN_MS);
-  const oldStats = runtimeState && runtimeState.stats;
-  runtimeState = new RuntimeState(parseKeys(env.OMDB_KEYS || ""), parseKeys(env.CLIENT_KEYS || ""), cooldownMs, stateSignature(env, cooldownMs));
-  if (oldStats) runtimeState.stats = oldStats;
+  const state = await getRuntimeState(env, true);
   return jsonResponse(env, request, 200, {
     ok: true,
-    clientKeyCount: runtimeState.clients.size,
-    requests: await getRequestStats(env, runtimeState),
-    omdb: runtimeState.omdbKeys.stats(false)
+    clientKeyCount: state.clients.size,
+    omdbKeySource: state.keySource,
+    requests: await getRequestStats(env, state),
+    omdb: state.omdbKeys.stats(false)
   });
 }
 

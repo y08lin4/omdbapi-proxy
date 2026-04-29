@@ -11,10 +11,11 @@
 | 变量名 | 用途 | 示例 |
 | --- | --- | --- |
 | `CLIENT_KEYS` | 你发给调用方的访问 key | `client_key_1,client_key_2` |
-| `OMDB_KEYS` | OMDb 官方 key 池 | `omdb_key_1,omdb_key_2` |
+| `OMDB_KEYS` | 可选备用 OMDb 官方 key 池，适合少量 key | `omdb_key_1,omdb_key_2` |
 | `ADMIN_KEY` | 管理接口 key | `admin_xxxxx` |
+| `STATS_KV` | KV 绑定；推荐同时保存统计和大体积 OMDb key 池 | `omdbapi_proxy_stats` |
 
-`CLIENT_KEYS` 和 `OMDB_KEYS` 支持逗号、空格或换行分隔。
+`CLIENT_KEYS` 和 `OMDB_KEYS` 支持逗号、空格或换行分隔。大量 OMDb key 请放到 KV 的 `omdb:keys`，不要塞进 `OMDB_KEYS`。
 
 ## 2. Cloudflare 控制台部署步骤
 
@@ -58,21 +59,39 @@ client_key_1,client_key_2
 ?apikey=client_key_1
 ```
 
-### 第 5 步：添加 OMDB_KEYS
+### 第 5 步：绑定 KV 并添加 OMDb key 池
+
+Cloudflare 单个变量有大小限制，大量 OMDb key 推荐放到 KV。
+
+在 Worker 设置里添加 KV namespace 绑定：
+
+```text
+Binding name: STATS_KV
+KV namespace: 新建或选择 omdbapi_proxy_stats
+```
+
+然后进入这个 KV namespace，新增一条记录：
+
+```text
+key: omdb:keys
+value: omdb_key_1,omdb_key_2,omdb_key_3
+```
+
+如果你有 `omdb_keys_comma.txt`，把里面的逗号分隔内容整体复制到 `omdb:keys` 的 value 里。
+
+当 KV 中存在 `omdb:keys` 时，Worker 会优先使用 KV。`OMDB_KEYS` 环境变量只作为少量 key 的备用方式。
+
+### 第 6 步：可选添加 OMDB_KEYS 备用变量
 
 - 类型：`密钥`
 - 变量名称：`OMDB_KEYS`
-- 值：OMDb 官方 key 池
-
-示例：
+- 值：少量 OMDb 官方 key
 
 ```text
-omdb_key_1,omdb_key_2,omdb_key_3
+omdb_key_1,omdb_key_2
 ```
 
-如果你有 `omdb_keys.txt`，可以把它转换成逗号分隔后粘贴进去。
-
-### 第 6 步：添加 ADMIN_KEY
+### 第 7 步：添加 ADMIN_KEY
 
 - 类型：`密钥`
 - 变量名称：`ADMIN_KEY`
@@ -84,7 +103,7 @@ omdb_key_1,omdb_key_2,omdb_key_3
 admin_xxxxxxxxx
 ```
 
-### 第 7 步：保存并重新部署
+### 第 8 步：保存并重新部署
 
 保存变量后点击：
 

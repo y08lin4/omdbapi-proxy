@@ -158,3 +158,30 @@ test("KV 持久化统计今日和总请求", async () => {
   }
 });
 
+
+
+test("从 KV 中读取 OMDb key 池", async () => {
+  const upstream = http.createServer((req, res) => {
+    const url = new URL(req.url, "http://upstream.test");
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ Response: "True", UsedKey: url.searchParams.get("apikey") }));
+  });
+  const base = await listen(upstream);
+  const kv = new MemoryKV();
+  await kv.put("omdb:keys", "kv-good");
+  const env = testEnv(base, { OMDB_KEYS: "", STATS_KV: kv, CLIENT_KEYS: "client-good" });
+  try {
+    const response = await worker.fetch(new Request("https://proxy.test/?apikey=client-good&t=Inception"), env);
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(json.UsedKey, "kv-good");
+
+    const health = await worker.fetch(new Request("https://proxy.test/health"), env);
+    const healthJson = await health.json();
+    assert.equal(healthJson.omdbKeySource, "kv");
+  } finally {
+    await close(upstream);
+  }
+});
+
+

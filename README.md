@@ -142,7 +142,7 @@ Cloudflare Dashboard
 → 变量和机密
 ```
 
-### 第 4 步：添加三个密钥变量
+### 第 4 步：添加客户端和管理密钥
 
 点击 `添加`，分别添加：
 
@@ -172,28 +172,6 @@ client_key_1,client_key_2
 ?apikey=client_key_1
 ```
 
-#### OMDB_KEYS
-
-类型选择：
-
-```text
-密钥
-```
-
-变量名称：
-
-```text
-OMDB_KEYS
-```
-
-值示例：
-
-```text
-omdb_key_1,omdb_key_2,omdb_key_3
-```
-
-也可以把 `omdb_keys.txt` 的内容处理成逗号分隔后粘贴进去。
-
 #### ADMIN_KEY
 
 类型选择：
@@ -216,7 +194,51 @@ admin_xxxxxxxxx
 
 这是管理接口用的 key。
 
-### 第 5 步：保存并重新部署
+### 第 5 步：绑定 KV 并放入 OMDb key 池
+
+因为 Cloudflare 单个环境变量有大小限制，大量 OMDb key 不建议放到 `OMDB_KEYS`。推荐把 OMDb key 池放进 KV。
+
+在 Worker 设置里添加 KV namespace 绑定：
+
+```text
+Binding name: STATS_KV
+KV namespace: 新建或选择 omdbapi_proxy_stats
+```
+
+然后进入该 KV namespace，新增一条记录：
+
+```text
+key: omdb:keys
+value: omdb_key_1,omdb_key_2,omdb_key_3
+```
+
+如果你已经生成了 `omdb_keys_comma.txt`，直接把文件内容整体复制到 `omdb:keys` 的 value 里。
+
+> 小规模 key 池仍可使用 `OMDB_KEYS` 环境变量；当 KV 中存在 `omdb:keys` 时，Worker 会优先使用 KV。
+
+#### 可选：OMDB_KEYS 备用变量
+
+类型选择：
+
+```text
+密钥
+```
+
+变量名称：
+
+```text
+OMDB_KEYS
+```
+
+值示例：
+
+```text
+omdb_key_1,omdb_key_2
+```
+
+仅适合少量 key。大量 key 请使用 KV 的 `omdb:keys`。
+
+### 第 6 步：保存并重新部署
 
 保存变量后，点击页面右下角或顶部的：
 
@@ -224,7 +246,7 @@ admin_xxxxxxxxx
 部署
 ```
 
-### 第 6 步：测试
+### 第 7 步：测试
 
 假设 Worker 域名是：
 
