@@ -340,14 +340,62 @@ git rm --cached omdb_keys.txt client_keys.txt
 - 普通业务错误，例如 `Movie not found!`，原样返回，不切换 key。
 - 静态页面提供数据看板，通过 `/metrics` 显示今日请求数和总请求数。
 
+## Cloudflare KV 持久化统计
+
+Cloudflare Worker 版默认使用内存统计，请求数在重新部署、冷启动或切换边缘节点后可能清零。若要让 `/metrics` 的今日请求数和总请求数持久化，可以绑定 Cloudflare KV。
+
+### 控制台配置步骤
+
+1. 进入 `Workers 和 Pages`。
+2. 打开你的 Worker。
+3. 进入 `设置` → `绑定` 或 `变量和机密` 中的绑定区域。
+4. 添加 KV namespace 绑定。
+5. 变量名称 / Binding name 填：
+
+```text
+STATS_KV
+```
+
+6. KV namespace 可以新建，例如：
+
+```text
+omdbapi_proxy_stats
+```
+
+7. 保存并重新部署 Worker。
+
+绑定完成后，请求统计会写入 KV：
+
+```text
+requests:total
+requests:day:YYYY-MM-DD
+requests:startedAt
+requests:lastRequest
+```
+
+### Wrangler 配置方式
+
+也可以用命令创建 KV：
+
+```bash
+npx wrangler@latest kv namespace create omdbapi_proxy_stats
+npx wrangler@latest kv namespace create omdbapi_proxy_stats --preview
+```
+
+然后把返回的 `id` 和 `preview_id` 填到根目录 `wrangler.toml`：
+
+```toml
+[[kv_namespaces]]
+binding = "STATS_KV"
+id = "你的生产 KV namespace id"
+preview_id = "你的预览 KV namespace id"
+```
+
+注意：KV 不是强一致计数器，高并发下可能有轻微计数误差。如果需要严格准确的全局计数，建议后续改用 Durable Objects。
+
 ## 8. 统计说明
 
-当前请求统计是内存统计：
-
-- Go 版：进程重启后清零。
-- Cloudflare Worker 版：重新部署、冷启动或切换边缘节点时可能清零，不保证全球节点共享。
-
-如果需要长期准确统计，建议后续接入 Cloudflare Durable Objects、KV 或 D1。
+Go 版当前是内存统计，进程重启后清零。Cloudflare Worker 版如果未绑定 `STATS_KV`，也是内存统计；绑定 `STATS_KV` 后会持久化到 KV。KV 不是强一致计数器，高并发下可能有轻微误差；如果需要严格准确统计，建议后续接入 Durable Objects。
 
 ## 许可证
 

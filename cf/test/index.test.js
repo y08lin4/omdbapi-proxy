@@ -16,6 +16,18 @@ async function close(server) {
   await once(server, "close");
 }
 
+class MemoryKV {
+  constructor() {
+    this.map = new Map();
+  }
+  async get(key) {
+    return this.map.has(key) ? this.map.get(key) : null;
+  }
+  async put(key, value) {
+    this.map.set(key, String(value));
+  }
+}
+
 function testEnv(baseURL, extra = {}) {
   return {
     CLIENT_KEYS: "client-good",
@@ -123,3 +135,26 @@ test("metrics 统计今日和总请求", async () => {
     await close(upstream);
   }
 });
+
+
+test("KV 持久化统计今日和总请求", async () => {
+  const upstream = http.createServer((req, res) => {
+    res.setHeader("content-type", "application/json");
+    res.end(JSON.stringify({ Response: "True", Title: "Inception" }));
+  });
+  const base = await listen(upstream);
+  const env = testEnv(base, { OMDB_KEYS: "only-good", STATS_KV: new MemoryKV() });
+  try {
+    await worker.fetch(new Request("https://proxy.test/?apikey=client-good&t=Inception"), env);
+    await worker.fetch(new Request("https://proxy.test/?apikey=client-good&s=Batman"), env);
+    const response = await worker.fetch(new Request("https://proxy.test/metrics"), env);
+    assert.equal(response.status, 200);
+    const json = await response.json();
+    assert.equal(json.requests.today, 2);
+    assert.equal(json.requests.total, 2);
+    assert.equal(json.requests.storage, "kv");
+  } finally {
+    await close(upstream);
+  }
+});
+

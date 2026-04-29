@@ -200,6 +200,59 @@ OMDB_KEYS=your_omdb_key_1,your_omdb_key_2
 ADMIN_KEY=local_admin_key
 ```
 
+## Cloudflare KV 持久化统计
+
+Cloudflare Worker 版默认使用内存统计，请求数在重新部署、冷启动或切换边缘节点后可能清零。若要让 `/metrics` 的今日请求数和总请求数持久化，可以绑定 Cloudflare KV。
+
+### 控制台配置步骤
+
+1. 进入 `Workers 和 Pages`。
+2. 打开你的 Worker。
+3. 进入 `设置` → `绑定` 或 `变量和机密` 中的绑定区域。
+4. 添加 KV namespace 绑定。
+5. 变量名称 / Binding name 填：
+
+```text
+STATS_KV
+```
+
+6. KV namespace 可以新建，例如：
+
+```text
+omdbapi_proxy_stats
+```
+
+7. 保存并重新部署 Worker。
+
+绑定完成后，请求统计会写入 KV：
+
+```text
+requests:total
+requests:day:YYYY-MM-DD
+requests:startedAt
+requests:lastRequest
+```
+
+### Wrangler 配置方式
+
+也可以用命令创建 KV：
+
+```bash
+npx wrangler@latest kv namespace create omdbapi_proxy_stats
+npx wrangler@latest kv namespace create omdbapi_proxy_stats --preview
+```
+
+然后把返回的 `id` 和 `preview_id` 填到根目录 `wrangler.toml`：
+
+```toml
+[[kv_namespaces]]
+binding = "STATS_KV"
+id = "你的生产 KV namespace id"
+preview_id = "你的预览 KV namespace id"
+```
+
+注意：KV 不是强一致计数器，高并发下可能有轻微计数误差。如果需要严格准确的全局计数，建议后续改用 Durable Objects。
+
 ## 7. 注意
 
-Cloudflare Worker 的内存状态是每个 isolate / 边缘节点本地的，不保证全局一致。因此当前版本的轮询、冷却和统计是“边缘本地状态”。如果你需要跨全球节点统一冷却或统计，需要再加 Durable Objects、KV 或 D1。
+Cloudflare Worker 的 key 轮询和冷却状态仍是每个 isolate / 边缘节点本地的，不保证全局一致。请求统计如果绑定了 `STATS_KV` 会持久化到 KV；未绑定时仍是内存统计。如果需要严格准确的全局计数和冷却状态，建议后续改用 Durable Objects。

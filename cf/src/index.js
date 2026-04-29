@@ -53,7 +53,7 @@ export async function handleRequest(request, env = {}, ctx = {}) {
           service: "omdb-api-manager-worker",
           runtime: "cloudflare-workers",
           clientKeyCount: state.clients.size,
-          requests: state.stats.snapshot(),
+          requests: await getRequestStats(env, state),
           omdb: state.omdbKeys.stats(false)
         });
       case "/metrics":
@@ -81,7 +81,7 @@ async function proxyRequest(request, env, state, upstreamBaseURL) {
     return omdbErrorResponse(env, request, 401, "Invalid API key.");
   }
 
-  state.stats.inc();
+  await recordRequestStats(env, state);
 
   if (state.omdbKeys.size() === 0) {
     return omdbErrorResponse(env, request, 503, "No upstream OMDb API keys configured.");
@@ -150,6 +150,60 @@ export class RuntimeState {
   }
 }
 
+
+
+async function recordRequestStats(env, state) {
+  state.stats.inc();
+  if (!env.STATS_KV) return state.stats.snapshot();
+
+  const now = new Date();
+  const day = dayString(now);
+  const total = await kvIncrement(env.STATS_KV, "requests:total");
+  const today = await kvIncrement(env.STATS_KV, `requests:day:${day}`);
+  await env.STATS_KV.put("requests:day:current", day);
+  await env.STATS_KV.put("requests:lastRequest", now.toISOString());
+  const startedAt = await env.STATS_KV.get("requests:startedAt");
+  if (!startedAt) await env.STATS_KV.put("requests:startedAt", state.stats.startedAt);
+
+  return {
+    total,
+    today,
+    day,
+    startedAt: startedAt || state.stats.startedAt,
+    lastRequest: now.toISOString(),
+    storage: "kv"
+  };
+}
+
+async function getRequestStats(env, state) {
+  if (!env.STATS_KV) {
+    return { ...state.stats.snapshot(), storage: "memory" };
+  }
+
+  const day = dayString(new Date());
+  const [totalRaw, todayRaw, startedAt, lastRequest] = await Promise.all([
+    env.STATS_KV.get("requests:total"),
+    env.STATS_KV.get(`requests:day:${day}`),
+    env.STATS_KV.get("requests:startedAt"),
+    env.STATS_KV.get("requests:lastRequest")
+  ]);
+
+  return {
+    total: Number.parseInt(totalRaw || "0", 10) || 0,
+    today: Number.parseInt(todayRaw || "0", 10) || 0,
+    day,
+    startedAt: startedAt || state.stats.startedAt,
+    lastRequest: lastRequest || undefined,
+    storage: "kv"
+  };
+}
+
+async function kvIncrement(kv, key) {
+  const current = Number.parseInt((await kv.get(key)) || "0", 10) || 0;
+  const next = current + 1;
+  await kv.put(key, String(next));
+  return next;
+}
 
 export class RequestStats {
   constructor() {
@@ -444,14 +498,14 @@ function optionsResponse(env, request) {
   return new Response(null, { status: 204, headers });
 }
 
-function metricsResponse(request, env, state) {
+async function metricsResponse(request, env, state) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return jsonResponse(env, request, 405, { error: "method not allowed" });
   }
-  return jsonResponse(env, request, 200, { requests: state.stats.snapshot() });
+  return jsonResponse(env, request, 200, { requests: await getRequestStats(env, state) });
 }
 
-function adminStats(request, env, state) {
+async function adminStats(request, env, state) {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return jsonResponse(env, request, 405, { error: "method not allowed" });
   }
@@ -460,12 +514,12 @@ function adminStats(request, env, state) {
   }
   return jsonResponse(env, request, 200, {
     clientKeyCount: state.clients.size,
-    requests: state.stats.snapshot(),
+    requests: await getRequestStats(env, state),
     omdb: state.omdbKeys.stats(true)
   });
 }
 
-function adminReload(request, env) {
+async function adminReload(request, env) {
   if (request.method !== "POST") {
     return jsonResponse(env, request, 405, { error: "method not allowed" });
   }
@@ -479,7 +533,7 @@ function adminReload(request, env) {
   return jsonResponse(env, request, 200, {
     ok: true,
     clientKeyCount: runtimeState.clients.size,
-    requests: runtimeState.stats.snapshot(),
+    requests: await getRequestStats(env, runtimeState),
     omdb: runtimeState.omdbKeys.stats(false)
   });
 }
@@ -559,3 +613,4 @@ function escapeXML(value) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
 }
+

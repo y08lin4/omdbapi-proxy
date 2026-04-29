@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Cloudflare Worker 版 OMDb 多 key API 管理器。",
+  "description": "Cloudflare Worker version of an OMDb multi-key API manager.",
   "scripts": {
     "test": "node --test",
     "dev": "npx wrangler@latest dev",
@@ -21,13 +21,16 @@
   "cloudflare": {
     "bindings": {
       "CLIENT_KEYS": {
-        "description": "你发给调用方的服务访问 key；支持一行一个、逗号或空格分隔。"
+        "description": "Client access keys for callers. Supports newline, comma, or space separated values."
       },
       "OMDB_KEYS": {
-        "description": "OMDb 官方 key 池；支持一行一个、逗号或空格分隔。不要提交到 GitHub。"
+        "description": "Upstream OMDb API key pool. Supports newline, comma, or space separated values. Do not commit real keys."
       },
       "ADMIN_KEY": {
-        "description": "管理接口 key，用于 /admin/stats 和 /admin/reload。"
+        "description": "Admin API key for /admin/stats and /admin/reload."
+      },
+      "STATS_KV": {
+        "description": "Optional KV namespace binding. When configured, /metrics request counters are persisted."
       }
     }
   },

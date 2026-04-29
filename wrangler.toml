@@ -13,3 +13,10 @@ HTTP_TIMEOUT = "10s"
 KEY_COOLDOWN = "5m"
 MAX_ATTEMPTS_PER_REQUEST = "0"
 CORS_ORIGIN = "*"
+
+# 可选：绑定 Cloudflare KV 后，/metrics 的今日请求数和总请求数会持久化。
+# 先创建 KV namespace，再取消注释并填入真实 id。
+# [[kv_namespaces]]
+# binding = "STATS_KV"
+# id = "你的生产 KV namespace id"
+# preview_id = "你的预览 KV namespace id"
