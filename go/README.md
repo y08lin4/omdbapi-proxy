@@ -1,53 +1,55 @@
-﻿# OMDb API 澶?Key 浠ｇ悊绠＄悊鍣紙Go锛?
+﻿# OMDb API 多 Key 代理管理器（Go）
 
-杩欐槸涓€涓叕缃戝彲閮ㄧ讲鐨?OMDb API 浠ｇ悊鏈嶅姟锛氬鎴风璇锋眰鏍煎紡淇濇寔 OMDb 瀹樻柟椋庢牸锛屼絾 `apikey` 浣跨敤浣犺嚜宸卞彂鏀剧殑鏈嶅姟 key銆傛湇鍔＄浼氫粠 `omdb_keys.txt` 涓疆璇㈤€夋嫨 OMDb 瀹樻柟 key锛岃姹傚畼鏂规帴鍙ｅ悗鍘熸牱杩斿洖銆?
+这是 Go 版本，适合部署在 VPS、Docker 或自建服务器上。客户端请求格式保持 OMDb 官方风格，但 `apikey` 使用你自己发放的服务 key。服务端会从 `omdb_keys.txt` 中轮询选择 OMDb 官方 key，请求官方接口后原样返回。
 
-## 宸叉敮鎸佺殑 API
+## 1. 文件说明
 
-- `GET /`锛歄MDb 鏁版嵁 API锛屽吋瀹瑰畼鏂?query 鍙傛暟銆?
-- `GET /api`锛氭暟鎹?API 鍒悕銆?
-- `GET /poster`锛歄MDb poster API 浠ｇ悊銆?
-- `GET /docs`锛氶潤鎬佽姹傛枃妗ｉ〉闈€?
-- `GET /health`锛氬仴搴锋鏌ャ€?
-- `GET /admin/stats`锛氭煡鐪?key 姹犵姸鎬侊紝闇€瑕?admin key銆?
-- `POST /admin/reload`锛氶噸杞?`omdb_keys.txt` 鍜?`client_keys.txt`锛岄渶瑕?admin key銆?
+```text
+omdb_keys.txt       # OMDb 官方 key 池，一行一个，不要提交到 Git
+client_keys.txt     # 你发给调用方的服务访问 key，一行一个，不要提交到 Git
+.env                # 服务配置，不要提交到 Git
+```
 
-鏁版嵁 API 閫忎紶鎵€鏈夊畼鏂瑰弬鏁帮紝渚嬪锛歚i`銆乣t`銆乣s`銆乣type`銆乣y`銆乣plot`銆乣r`銆乣callback`銆乣v`銆乣page`銆乣Season`銆乣Episode` 绛夈€?
+示例文件：
 
-## Key 鏂囦欢
+```text
+omdb_keys.example.txt
+client_keys.example.txt
+.env.example
+```
 
-### `omdb_keys.txt`
+## 2. 配置步骤
 
-OMDb 瀹樻柟 key 姹狅紝涓€琛屼竴涓細
+进入 Go 目录：
 
-```txt
+```bash
+cd go
+```
+
+复制示例配置：
+
+```bash
+cp .env.example .env
+cp omdb_keys.example.txt omdb_keys.txt
+cp client_keys.example.txt client_keys.txt
+```
+
+编辑 `omdb_keys.txt`，一行一个 OMDb 官方 key：
+
+```text
 omdb_key_1
 omdb_key_2
 omdb_key_3
 ```
 
-### `client_keys.txt`
+编辑 `client_keys.txt`，一行一个你发给用户的访问 key：
 
-浣犲彂缁欒皟鐢ㄦ柟鐨勬湇鍔¤闂?key锛屼竴琛屼竴涓細
-
-```txt
+```text
 client_key_1
 client_key_2
 ```
 
-娌℃湁瀹㈡埛绔?key 鎴?key 閿欒鏃讹紝浠ｇ悊 API 浼氱洿鎺ヨ繑鍥?`401`锛屼笉浼氳姹?OMDb銆?
-
-## 閰嶇疆
-
-澶嶅埗绀轰緥锛?
-
-```powershell
-Copy-Item .env.example .env
-Copy-Item omdb_keys.example.txt omdb_keys.txt
-Copy-Item client_keys.example.txt client_keys.txt
-```
-
-缂栬緫 `.env`锛?
+编辑 `.env`：
 
 ```env
 LISTEN_ADDR=:8080
@@ -59,111 +61,154 @@ KEY_COOLDOWN=5m
 CORS_ORIGIN=*
 ```
 
-## 鍚姩
+如果真实 `omdb_keys.txt` 放在项目根目录，可以设置：
 
-```powershell
+```env
+OMDB_KEYS_FILE=../omdb_keys.txt
+```
+
+## 3. 启动
+
+直接运行：
+
+```bash
 go run .
 ```
 
-鏋勫缓锛?
+构建二进制：
 
-```powershell
-go build -o omdb-api-manager.exe .
+```bash
+go build -o omdb-api-manager .
 ```
 
-璁块棶鏂囨。锛?
+Docker：
+
+```bash
+docker compose up -d --build
+```
+
+访问文档：
 
 ```text
 http://localhost:8080/docs
 ```
 
-## 璇锋眰绀轰緥
+## 4. 请求示例
 
-### 鎸夋爣棰樻煡璇?
-
-```text
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&t=Inception&plot=full
-```
-
-### 鎸?IMDb ID 鏌ヨ
+按标题查询：
 
 ```text
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&i=tt1375666
+http://localhost:8080/?apikey=CLIENT_KEY&t=Inception&plot=full
 ```
 
-### 鎼滅储
+按 IMDb ID 查询：
 
 ```text
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&s=Batman&page=2
+http://localhost:8080/?apikey=CLIENT_KEY&i=tt1375666
 ```
 
-### 鍓ч泦瀛?闆?
+搜索：
 
 ```text
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&t=Game%20of%20Thrones&Season=1
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&t=Game%20of%20Thrones&Season=1&Episode=1
+http://localhost:8080/?apikey=CLIENT_KEY&s=Batman&page=2
 ```
 
-### XML / JSONP
+剧集季 / 集：
 
 ```text
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&t=Inception&r=xml
-GET http://localhost:8080/?apikey=YOUR_CLIENT_KEY&t=Inception&callback=myCallback
+http://localhost:8080/?apikey=CLIENT_KEY&t=Game%20of%20Thrones&Season=1
+http://localhost:8080/?apikey=CLIENT_KEY&t=Game%20of%20Thrones&Season=1&Episode=1
 ```
 
-### Poster API
+Poster API：
 
 ```text
-GET http://localhost:8080/poster?apikey=YOUR_CLIENT_KEY&i=tt1375666
+http://localhost:8080/poster?apikey=CLIENT_KEY&i=tt1375666
 ```
 
-### Header 浼?key
+## 5. 管理接口
 
-涔熷彲浠ユ妸鏈嶅姟 key 鏀惧湪璇锋眰澶撮噷锛?
+管理接口需要 `.env` 中的 `ADMIN_KEY`。
+
+### 查看统计
 
 ```text
-GET /?t=Inception HTTP/1.1
-X-API-Key: YOUR_CLIENT_KEY
+GET /admin/stats?admin_key=ADMIN_KEY
 ```
 
-鎴栵細
+示例：
+
+```bash
+curl "http://localhost:8080/admin/stats?admin_key=ADMIN_KEY"
+```
+
+返回内容包括：
+
+- 客户端 key 数量。
+- OMDb key 总数。
+- 可用 OMDb key 数量。
+- 每个 OMDb key 的脱敏值、请求次数、成功次数、失败次数、冷却状态。
+- 今日请求数和总请求数。
+
+### 重载 key 文件
 
 ```text
-Authorization: Bearer YOUR_CLIENT_KEY
+POST /admin/reload?admin_key=ADMIN_KEY
 ```
 
-## 绠＄悊鎺ュ彛
+示例：
 
-### 鏌ョ湅鐘舵€?
+```bash
+curl -X POST "http://localhost:8080/admin/reload?admin_key=ADMIN_KEY"
+```
+
+作用：重新读取 `omdb_keys.txt` 和 `client_keys.txt`。当你新增或删除 key 后，可以调用这个接口，不需要重启服务。
+
+## 6. 公开状态接口
+
+健康检查：
 
 ```text
-GET http://localhost:8080/admin/stats?admin_key=ADMIN_KEY
+GET /health
 ```
 
-### 閲嶈浇 key 鏂囦欢
+数据看板接口：
 
 ```text
-POST http://localhost:8080/admin/reload?admin_key=ADMIN_KEY
+GET /metrics
 ```
 
-## Docker 閮ㄧ讲
+返回：
 
-```powershell
-docker build -t omdb-api-manager .
-docker run -d --name omdb-api-manager `
-  -p 8080:8080 `
-  -v ${PWD}/omdb_keys.txt:/app/omdb_keys.txt:ro `
-  -v ${PWD}/client_keys.txt:/app/client_keys.txt:ro `
-  --env-file .env `
-  omdb-api-manager
+```json
+{
+  "requests": {
+    "total": 10,
+    "today": 3,
+    "day": "2026-04-30"
+  }
+}
 ```
 
-鍏綉寤鸿鏀惧湪 Caddy/Nginx 鍚庨潰鍋?HTTPS銆?
+## 7. 负载与容错
 
-## 璐熻浇涓庡閿?
+- OMDb key 默认轮询使用。
+- 如果某个 OMDb key 返回额度耗尽、无效 key、429、5xx 或超时，会进入冷却，自动尝试下一个 key。
+- 普通业务错误不会切 key，例如 `Movie not found!` 会原样返回给客户端。
+- 客户端 key 不限流。
 
-- OMDb key 榛樿杞浣跨敤銆?
-- 濡傛灉鏌愪釜 OMDb key 杩斿洖棰濆害鑰楀敖銆佹棤鏁?key銆?29銆?xx 鎴栬秴鏃讹紝浼氳繘鍏ュ喎鍗达紝鑷姩灏濊瘯涓嬩竴涓?key銆?
-- 鏅€氫笟鍔￠敊璇笉浼氬垏 key锛屼緥濡?`Movie not found!` 浼氬師鏍疯繑鍥炵粰瀹㈡埛绔€?
-- 瀹㈡埛绔?key 涓嶉檺娴併€?
+## 8. 公网部署建议
 
+建议把 Go 服务放在 Caddy 或 Nginx 后面做 HTTPS。
+
+Caddy 示例：
+
+```caddyfile
+api.example.com {
+    reverse_proxy 127.0.0.1:8080
+}
+```
+
+## 9. 注意
+
+当前请求统计是内存统计，进程重启后会清零。如果需要持久统计，可以后续接入数据库。
